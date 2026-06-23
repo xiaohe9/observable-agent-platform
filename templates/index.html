@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Observable Agent Platform</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1a2332;
+      --bg-input: #0f172a;
+      --border: #334155;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #06b6d4;
+      --accent-glow: rgba(6, 182, 212, 0.15);
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --purple: #a78bfa;
+      --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── 顶部导航 ── */
+    .header {
+      height: 56px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent), #3b82f6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .scenario-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .scenario-tab {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .scenario-tab:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .scenario-tab.active {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── 主布局 ── */
+    .main {
+      display: flex;
+      height: calc(100vh - 56px);
+    }
+
+    /* ── 左侧聊天区 40% ── */
+    .chat-panel {
+      width: 40%;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-primary);
+      overflow: hidden;        /* 新增 */
+      min-height: 0;           /* 新增 */
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;          /* 新增 */
+    }
+
+    .message {
+      max-width: 90%;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .message.user {
+      align-self: flex-end;
+    }
+
+    .message.agent {
+      align-self: flex-start;
+    }
+
+    .message-bubble {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, #1e40af, #1d4ed8);
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.agent .message-bubble {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+
+    .message.user .message-time { text-align: right; }
+
+    .welcome-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .welcome-card h3 {
+      font-size: 15px;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+
+    .welcome-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .example-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .example-chip {
+      padding: 6px 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .example-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .chat-input-area {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .chat-input:focus {
+      border-color: var(--accent);
+    }
+
+    .chat-input::placeholder { color: var(--text-muted); }
+
+    .send-btn {
+      padding: 12px 20px;
+      background: linear-gradient(135deg, var(--accent), #0891b2);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── 右侧观测区 60% ── */
+    .brain-panel {
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    background: #0f172a;
+    overflow: hidden;        /* 新增：防止溢出 */
+    min-height: 0;           /* 新增：flex关键修复 */
+    }
+
+    .brain-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brain-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brain-title .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .brain-status {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .brain-content {
+    flex: 1;
+    overflow-y: auto;        /* 已有，确保生效 */
+    padding: 20px;
+    min-height: 0;          /* 新增：允许收缩滚动 */
+    }
+
+    /* 新增：暗色主题滚动条样式（更明显） */
+    .brain-content::-webkit-scrollbar {
+        width: 8px;
+    }
+    .brain-content::-webkit-scrollbar-track {
+        background: #1e293b;
+        border-radius: 4px;
+    }
+    .brain-content::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 4px;
+    }
+    .brain-content::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+    }
+
+    .brain-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      font-size: 14px;
+      gap: 8px;
+    }
+
+    .brain-empty .icon { font-size: 48px; opacity: 0.3; }
+
+    /* ── 步骤卡片 ── */
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      animation: slideIn 0.35s ease-out;
+    }
+
+    .step-header {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .step-icon.intent { background: rgba(59, 130, 246, 0.15); }
+    .step-icon.guard { background: rgba(239, 68, 68, 0.15); }
+    .step-icon.guard-pass { background: rgba(16, 185, 129, 0.15); }
+    .step-icon.thought { background: rgba(167, 139, 250, 0.15); }
+    .step-icon.action { background: rgba(245, 158, 11, 0.15); }
+    .step-icon.observation { background: rgba(6, 182, 212, 0.15); }
+    .step-icon.rag { background: rgba(16, 185, 129, 0.15); }
+    .step-icon.answer { background: rgba(59, 130, 246, 0.15); }
+
+    .step-label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .step-badge {
+      margin-left: auto;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-pass { background: rgba(16, 185, 129, 0.15); color: var(--green); }
+    .badge-block { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+    .badge-info { background: rgba(6, 182, 212, 0.15); color: var(--accent); }
+
+    .step-body {
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .step-body code, .code-block {
+      font-family: var(--font-mono);
+      background: rgba(6, 182, 212, 0.08);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .code-block {
+      display: block;
+      padding: 10px 14px;
+      margin-top: 8px;
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .rag-doc {
+      padding: 8px 12px;
+      background: rgba(16, 185, 129, 0.06);
+      border-left: 3px solid var(--green);
+      border-radius: 0 6px 6px 0;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+
+    .rag-doc + .rag-doc { margin-top: 4px; }
+
+    /* ── 动画 ── */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── 滚动条 ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* ── 加载指示 ── */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      align-self: flex-start;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部 -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">🧠</div>
+      <div>
+        <div class="header-title">Observable Agent Platform</div>
+        <div class="header-subtitle">可观测 AI Agent · 自定义 ReAct 引擎</div>
+      </div>
+    </div>
+    <div class="scenario-tabs" id="scenarioTabs"></div>
+  </header>
+
+  <!-- 主区域 -->
+  <div class="main">
+    <!-- 左侧聊天 -->
+    <div class="chat-panel">
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-area">
+        <div class="input-row">
+          <input type="text" class="chat-input" id="chatInput"
+                 placeholder="输入您的问题..." autocomplete="off">
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧 Agent 大脑 -->
+    <div class="brain-panel">
+      <div class="brain-header">
+        <div class="brain-title">
+          <span class="pulse-dot"></span>
+          Agent 大脑观测区
+        </div>
+        <div class="brain-status" id="brainStatus">等待输入...</div>
+      </div>
+      <div class="brain-content" id="brainContent">
+        <div class="brain-empty">
+          <div class="icon">🔍</div>
+          <div>发送消息后，Agent 的思考过程将在此实时展示</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── 全局状态 ──
+    let currentScenario = 'logistics';
+    let scenarios = [];
+    let sessionId = 'session_' + Date.now();
+    let isStreaming = false;
+
+    // ── 初始化 ──
+    async function init() {
+      const res = await fetch('/api/scenarios');
+      scenarios = await res.json();
+      renderScenarioTabs();
+      switchScenario('logistics');
+    }
+
+    // ── 场景切换 ──
+    function renderScenarioTabs() {
+      const container = document.getElementById('scenarioTabs');
+      container.innerHTML = scenarios.map(s =>
+        `<button class="scenario-tab" data-id="${s.id}" onclick="switchScenario('${s.id}')">
+          ${s.icon} ${s.name}
+        </button>`
+      ).join('');
+    }
+
+    function switchScenario(id) {
+      currentScenario = id;
+      document.querySelectorAll('.scenario-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.id === id);
+      });
+      resetChat();
+    }
+
+    function resetChat() {
+      const scenario = scenarios.find(s => s.id === currentScenario);
+      if (!scenario) return;
+
+      document.getElementById('chatMessages').innerHTML = '';
+      document.getElementById('brainContent').innerHTML =
+        `<div class="brain-empty"><div class="icon">🔍</div><div>发送消息后，Agent 的思考过程将在此实时展示</div></div>`;
+      document.getElementById('brainStatus').textContent = '等待输入...';
+
+      // 重置后端会话
+      fetch('/api/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId })
+      });
+      sessionId = 'session_' + Date.now();
+
+      // 欢迎卡片
+      const welcome = document.createElement('div');
+      welcome.className = 'welcome-card';
+      welcome.innerHTML = `
+        <h3>${scenario.icon} ${scenario.name}</h3>
+        <p>${scenario.welcome}</p>
+        <div class="example-chips">
+          ${scenario.examples.map(ex =>
+            `<span class="example-chip" onclick="useExample('${ex.replace(/'/g, "\\'")}')">${ex}</span>`
+          ).join('')}
+        </div>`;
+      document.getElementById('chatMessages').appendChild(welcome);
+    }
+
+    function useExample(text) {
+      document.getElementById('chatInput').value = text;
+      sendMessage();
+    }
+
+    // ── 发送消息 ──
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if (!message || isStreaming) return;
+
+      appendChatMessage('user', message);
+      input.value = '';
+      isStreaming = true;
+      document.getElementById('sendBtn').disabled = true;
+
+      // 清空大脑区
+      document.getElementById('brainContent').innerHTML = '';
+      document.getElementById('brainStatus').textContent = 'Agent 思考中...';
+
+      // 显示 typing
+      const typingEl = document.createElement('div');
+      typingEl.className = 'typing-indicator';
+      typingEl.id = 'typingIndicator';
+      typingEl.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+      document.getElementById('chatMessages').appendChild(typingEl);
+      scrollChat();
+
+      // SSE 请求
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          scenario: currentScenario,
+          session_id: sessionId
+        })
+      }).then(response => {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let finalAnswer = '';
+
+        function processStream({ done, value }) {
+          if (done) {
+            finishStream(finalAnswer);
+            return;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const event = JSON.parse(line.slice(6));
+                renderBrainStep(event);
+                if (event.type === 'final_answer') {
+                  finalAnswer = event.content;
+                }
+              } catch (e) { /* 忽略解析错误 */ }
+            }
+          }
+          return reader.read().then(processStream);
+        }
+
+        return reader.read().then(processStream);
+      }).catch(err => {
+        finishStream('连接失败，请检查服务是否正常运行。');
+        console.error(err);
+      });
+    }
+
+    function finishStream(answer) {
+      isStreaming = false;
+      document.getElementById('sendBtn').disabled = false;
+      document.getElementById('brainStatus').textContent = '思考完成';
+
+      const typing = document.getElementById('typingIndicator');
+      if (typing) typing.remove();
+
+      if (answer) {
+        appendChatMessage('agent', answer);
+      }
+    }
+
+    // ── 聊天消息 ──
+    function appendChatMessage(role, content) {
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      const now = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      div.innerHTML = `
+        <div class="message-bubble">${formatMarkdown(content)}</div>
+        <div class="message-time">${now}</div>`;
+      document.getElementById('chatMessages').appendChild(div);
+      scrollChat();
+    }
+
+    function formatMarkdown(text) {
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+    }
+
+    function scrollChat() {
+      const el = document.getElementById('chatMessages');
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // ── 大脑步骤渲染 ──
+    function renderBrainStep(event) {
+      const container = document.getElementById('brainContent');
+      let card;
+
+      switch (event.type) {
+        case 'intent':
+          card = buildStepCard({
+            icon: '🎯', iconClass: 'intent', label: '意图识别',
+            badge: `<span class="step-badge badge-info">${event.label}</span>`,
+            body: `置信度 <code>${(event.confidence * 100).toFixed(0)}%</code><br>${event.message}`
+          });
+          break;
+
+        case 'hallucination_guard':
+          const isPass = event.status === 'passed';
+          card = buildStepCard({
+            icon: isPass ? '✅' : '🛡️',
+            iconClass: isPass ? 'guard-pass' : 'guard',
+            label: `防幻觉 · ${event.layer_name}`,
+            badge: `<span class="step-badge ${isPass ? 'badge-pass' : 'badge-block'}">${isPass ? '通过' : '已拦截'}</span>`,
+            body: event.message + (event.detail ? `<br><span style="color:var(--text-muted)">${event.detail}</span>` : '')
+              + (event.entities ? `<div class="code-block">${JSON.stringify(event.entities, null, 2)}</div>` : '')
+              + (event.missing_entities ? `<div class="code-block">缺失: ${event.missing_entities.join(', ')}</div>` : '')
+          });
+          break;
+
+        case 'thought':
+          card = buildStepCard({
+            icon: '💭', iconClass: 'thought', label: `Thought #${event.step}`,
+            body: event.content
+          });
+          break;
+
+        case 'action':
+          card = buildStepCard({
+            icon: '⚡', iconClass: 'action', label: 'Action',
+            body: `<code>${event.tool}</code>(${JSON.stringify(event.params)})`
+              + `<div class="code-block">${event.message}</div>`
+          });
+          break;
+
+        case 'observation':
+          card = buildStepCard({
+            icon: '👁️', iconClass: 'observation', label: 'Observation',
+            badge: `<span class="step-badge ${event.success ? 'badge-pass' : 'badge-block'}">${event.success ? '成功' : '异常'}</span>`,
+            body: `<div class="code-block">${JSON.stringify(event.result, null, 2)}</div>`
+          });
+          break;
+
+        case 'rag':
+          card = buildStepCard({
+            icon: '📚', iconClass: 'rag', label: 'RAG 检索',
+            badge: `<span class="step-badge badge-info">${event.count} 条</span>`,
+            body: event.message + (event.documents || []).map(d =>
+              `<div class="rag-doc">${d}</div>`
+            ).join('')
+          });
+          break;
+
+        case 'final_answer':
+          card = buildStepCard({
+            icon: '📝', iconClass: 'answer', label: 'Final Answer',
+            badge: event.is_followup
+              ? `<span class="step-badge badge-info">追问</span>`
+              : `<span class="step-badge badge-pass">完成</span>`,
+            body: formatMarkdown(event.content)
+          });
+          break;
+
+        default:
+          return;
+      }
+
+      container.appendChild(card);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function buildStepCard({ icon, iconClass, label, badge = '', body }) {
+      const div = document.createElement('div');
+      div.className = 'step-card';
+      div.innerHTML = `
+        <div class="step-header">
+          <div class="step-icon ${iconClass}">${icon}</div>
+          <div class="step-label">${label}</div>
+          ${badge}
+        </div>
+        <div class="step-body">${body}</div>`;
+      return div;
+    }
+
+    // ── 键盘事件 ──
+    document.getElementById('chatInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // ── 启动 ──
+    init();
+  </script>
+</body>
+</html>

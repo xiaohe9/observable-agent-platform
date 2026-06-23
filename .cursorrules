@@ -1,0 +1,32 @@
+# Observable Agent Platform - 项目规则
+
+## 技术栈
+- 后端：Python 3.12 + Flask（单文件app.py启动）
+- 前端：原生HTML/CSS/JS（单文件templates/index.html）
+- 不使用任何前端框架（React/Vue都不需要）
+- 不使用LangChain封装（自己实现ReAct循环，展示架构能力）
+
+## 代码规范
+- 所有用户可见内容用中文
+- 每个Python函数必须有中文注释
+- 变量名用英文，但注释解释业务含义
+- 代码结构清晰，方便面试讲解
+
+## 文件结构要求
+agent-demo-v2/
+├── app.py                  # Flask主服务 + SSE接口
+├── agent_engine.py         # 自定义ReAct引擎（核心）
+├── scenarios/
+│   ├── logistics.py        # 物流场景配置
+│   └── insurance.py        # 保险场景配置
+├── templates/
+│   └── index.html          # 分屏前端界面
+├── .cursorrules            # 本文件
+└── requirements.txt        # 依赖清单
+
+## 设计原则
+- 暗色科技主题（深蓝/slate色系）
+- 左侧40%聊天区，右侧60% Agent大脑观测区
+- 每个步骤有动画效果（slideIn/fadeIn）
+- 所有数据用Mock（不需要真实API Key）
+- 必须能本地运行，面试时打开浏览器就能演示
